@@ -2122,3 +2122,78 @@ color:#94A3B8;
     }
 
 }
+
+/* ===== Responsive Earn Page ===== */
+
+#earn-view{
+    width:100%;
+}
+
+.earn-details-container{
+    width:100%;
+    max-width:900px;
+    margin:auto;
+    padding:16px;
+    overflow-x:hidden;
+}
+
+.earn-cashback-hero{
+    width:100%;
+    padding:20px;
+}
+
+.earn-cashback-hero h1{
+    font-size:clamp(28px,6vw,46px);
+}
+
+.earn-cashback-hero h2{
+    font-size:clamp(16px,3vw,22px);
+}
+
+.earn-stats-row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    width:100%;
+}
+
+.earn-circle-progress{
+    width:100%;
+    aspect-ratio:1/1;
+    max-width:90px;
+    margin:auto;
+    font-size:clamp(12px,2vw,16px);
+}
+
+.history-list{
+    width:100%;
+}
+
+.history-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.btn-transfer{
+    width:100%;
+}
+
+@media (max-width:600px){
+
+    .earn-stats-row{
+        grid-template-columns:1fr;
+    }
+
+    .earn-circle-progress{
+        max-width:80px;
+    }
+
+    .history-item{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+}
