@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نبضة  — حجز الملاعب والمدربين الرياضيين</title>
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons for clean, responsive vector glyphs -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="design.css">
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet Map JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        /* ستايلات متوافقة بالكامل لخطوات إنشاء الفريق داخل صفحتكِ */
+        .creation-container {
+            background: #FFFFFF;
+            border: 1px solid var(--border-color, #E2E8F0);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            margin: 20px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            color: #1E293B;
+        }
+
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: 40px;
+            padding: 0 50px;
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            right: 50px;
+            height: 2px;
+            background-color: #E2E8F0;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .step-progress-bar {
+            position: absolute;
+            top: 50%;
+            right: 50px;
+            height: 2px;
+            background-color: var(--primary, #00C497);
+            transform: translateY(-50%);
+            z-index: 2;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #FFFFFF;
+            border: 2px solid #E2E8F0;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 3;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        .step.active {
+            background-color: var(--primary, #00C497);
+            border-color: var(--primary, #00C497);
+            color: #FFFFFF;
+            box-shadow: 0 0 15px rgba(0, 196, 151, 0.3);
+        }
+
+        .step.completed {
+            background-color: var(--primary, #00C497);
+            border-color: var(--primary, #00C497);
+            color: #FFFFFF;
+        }
+
+        .step-label {
+            position: absolute;
+            top: 48px;
+            font-size: 0.85rem;
+            color: #64748B;
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .step.active .step-label, .step.completed .step-label {
+            color: #1E293B;
+        }
+
+        .step-content {
+            display: none;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .step-content.active {
+            display: flex;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #1E293B;
+        }
+
+        .team-input {
+            width: 100%;
+            padding: 18px 24px;
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            color: #1E293B;
+            font-size: 1.1rem;
+            font-weight: 600;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .team-input:focus {
+            border-color: var(--primary, #00C497);
+            background-color: #FFFFFF;
+        }
+
+        .sports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .sport-card {
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sport-card:hover {
+            border-color: var(--primary, #00C497);
+            background-color: #FFFFFF;
+            transform: translateY(-2px);
+        }
+
+        .sport-card.selected {
+            background-color: rgba(0, 196, 151, 0.08);
+            border-color: var(--primary, #00C497);
+        }
+
+        .sport-icon {
+            font-size: 2rem;
+        }
+
+        .sport-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .member-row {
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .member-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .member-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .member-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .member-status {
+            font-size: 0.8rem;
+            color: #64748B;
+        }
+
+        .invite-btn {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            color: #1E293B;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .invite-btn.invited {
+            background-color: var(--primary, #00C497);
+            color: #FFFFFF;
+            border-color: var(--primary, #00C497);
+        }
+
+        .success-box {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .success-badge {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 16px;
+            margin-top: auto;
+            padding-top: 30px;
+        }
+
+        .btn-action {
+            padding: 16px 28px;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            outline: none;
+        }
+
+        .btn-next {
+            background-color: var(--primary, #00C497);
+            color: #FFFFFF;
+            flex-grow: 1;
+        }
+
+        .btn-next:hover {
+            background-color: #00b088;
+        }
+
+        .btn-prev {
+            background-color: #F1F5F9;
+            color: #1E293B;
+            border: 1px solid #E2E8F0;
+        }
+
+        .btn-prev:hover {
+            background-color: #E2E8F0;
+        }
+    </style>
+</head>
+<body>
+
+      <div class="app-container">
+    
+        <!-- 1. AUTHENTICATION VIEW -->
+         <!-- LANDING PAGE -->
+<div id="landing-view" class="landing-view">
+
+    <div class="landing-content">
+
+       <div class="auth-logo" style="margin-bottom:20px; display: inline-flex; align-items: center; gap: 4px;">
+    <span style="color: var(--white); font-weight: 800;">نـبـ</span>
+    <img src="logoo.png" alt="نبضة" style="height: 2.4em; width: 2.0em; vertical-align: middle;">
+    <span style="color: var(--primary); font-weight: 800;">ـضـة</span>
+</div>
+
+        <h1 class="landing-title">
+            المنصة الرقمية الأولى لربط المجتمع بالرياضة
+        </h1>
+
+        <p class="landing-subtitle">
+            منصة رقمية تربط الممارسين الرياضيين بالمنشآت الرياضية بطريقة ذكية وسهلة،
+            اكتشف آلاف المنشآت، احجز ملعبك، والعب مع مجتمع رياضي نشط.
+        </p>
+
+        <div class="landing-buttons">
+
+            <button id="start-now-btn" class="btn btn-primary">
+                أبدأ الآن
+            </button>
+
+            <button id="partner-btn" class="btn btn-outline">
+                كن شريكًا
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+<div id="auth-view" class="auth-view hidden">
+                <div class="auth-brand">
+                <div class="auth-logo" style="display: inline-flex; align-items: center; gap: 4px;">
+    <span style="color: var(--white); font-weight: 800;">نـبـ</span>
+    <img src="logoo.png" alt="نبضة" style="height: 2.4em; width: 2.0em; vertical-align: middle;">
+    <span style="color: var(--primary); font-weight: 800;">ـضـة</span>
+</div>
+                <p class="auth-tagline">احجز ملعبك المفضل وتدرب مع نخبة الكباتن</p>
+            </div>
+            
+<div class="auth-card">
+    <h2 class="auth-title">مرحبًا بك مجددًا !</h2>
+    <p class="auth-subtitle">سجل دخولك باستخدام بيانات حسابك في مصرف الإنماء</p>
+
+    <form id="login-form" novalidate>
+        <!-- 1. حقل اسم المستخدم -->
+        <div class="form-group">
+            <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" id="bank-username" class="form-input" placeholder=" " required 
+                       pattern="[a-zA-Z0-9]{8,20}">
+                <label class="form-label" for="bank-username">اسم المستخدم</label>
+            </div>
+            <div class="validation-msg" id="username-error" style="display: none; color: var(--danger); font-size: 0.85rem; margin-top: 5px;">
+                <i class="fas fa-exclamation-circle"></i> يجب أن يتكون اسم المستخدم من 8 إلى 20 خانة (حروف إنجليزية وأرقام فقط دون رموز أو مسافات).
+            </div>
+        </div>
+
+        <!-- 2. حقل كلمة المرور -->
+        <div class="form-group">
+            <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="bank-password" class="form-input" placeholder=" " required 
+                       minlength="8" maxlength="16">
+                <label class="form-label" for="bank-password">كلمة المرور</label>
+            </div>
+            <div class="validation-msg" id="password-error" style="display: none; color: var(--danger); font-size: 0.85rem; margin-top: 5px;">
+                <i class="fas fa-exclamation-circle"></i> يجب أن تتكون كلمة المرور من 8 إلى 16 خانة.
+            </div>
+        </div>
+
+        <!-- 3. خيارات التذكر ونسيت كلمة المرور -->
+        <div class="auth-options">
+            <label class="remember-me">
+                <input type="checkbox"> تذكرني
+            </label>
+            <a href="#" class="forgot-pass">نسيت كلمة المرور؟</a>
+        </div>
+
+        <!-- 4. زر تسجيل الدخول -->
+        <button type="submit" class="btn btn-primary">
+            تسجيل الدخول <i class="fas fa-arrow-left"></i>
+        </button>
+    </form>
+</div>
+
+      </div>
+
+       
+        <!-- MAIN LAYOUT CONTAINER (Shown after Simulated Authentication) -->
+        <div id="main-app-layout" class="main-wrapper hidden">
+            
+            <!-- DESKTOP / TABLET SIDEBAR NAVIGATION -->
+           <nav class="desktop-nav">
+<div class="auth-logo" style="display: inline-flex; align-items: center; gap: 4px;">
+    <span style="color: var(--white); font-weight: 800;">نـبـ</span>
+
+    <img src="logoo.png"
+         alt="نبضة"
+         style="height: 2.4em; width: 2em; vertical-align: middle;">
+
+    <span style="color: var(--primary); font-weight: 800;">ـضـة</span>
+</div>   
+        <ul class="nav-menu">
+                    <li>
+                        <button class="nav-item-btn active" data-view="home">
+                            <i class="fas fa-home"></i> <span>الرئيسية</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item-btn" data-view="explore">
+                            <i class="fas fa-compass"></i> <span>استكشاف</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item-btn" data-view="team">
+                            <i class="fas fa-users"></i> <span>فريقي</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item-btn" data-view="search">
+                            <i class="fas fa-search"></i> <span>بحث</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-item-btn" data-view="account">
+                            <i class="fas fa-user"></i> <span>حسابي</span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="nav-user-panel">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop" class="nav-avatar" alt="Avatar">
+                    <div>
+                        <div class="nav-username" id="desktop-user-display-name">فيصل أحمد</div>
+                        <div class="nav-user-role">لاعب بلاتيني</div>
+                    </div>
+                    <button class="link-btn" data-view="logout" style="margin-right: auto; color: var(--danger);" title="تسجيل الخروج">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- VIEW CONTAINER (Dynamic content swaps inside here) -->
+            <main class="view-container">
+
+                <!-- 2. HOME VIEW (الرئيسية) -->
+
+                <div id="home-view" class="hidden">
+                    <div class="header-section">
+                        <div class="header-top">
+                            <div>
+                                <h1 class="greeting-title">صباح الخير، <span id="greeting-user-name">فيصل أحمد</span> 👋</h1>
+                                <p class="greeting-subtitle">مستعد للتمارين والنشاط اليوم؟</p>
+                            </div>
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop" class="header-avatar" id="avatar-to-account" alt="Avatar">
+                        </div>
+                        
+                        <!-- Search Bar -->
+                        <div class="search-wrapper">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="global-search" class="search-input" placeholder="ابحث عن ملاعب، أكاديميات، مدربين...">
+                        </div>
+                    </div>
+                    <div class="alinma-earn-card">
+    <div class="alinma-card-header">
+        <div class="alinma-brand">
+            <div class="alinma-logo-circle">إن</div>
+            <div>
+                <h3>اكسب مع الإنماء</h3>
+                <small>Alinma Move-to-Earn</small>
+            </div>
+        </div>
+
+        <span class="badge-m2e">Move • Earn</span>
+    </div>
+
+    <h2 style="font-size:32px;margin:10px 0;">
+        حوّل نشاطك الرياضي إلى مكافآت
+    </h2>
+
+    <p style="opacity:.8">
+        اربط نشاطك واحصل على كاش باك مقابل تمارينك.
+    </p>
+
+    <div class="alinma-stats-grid">
+
+        <div class="alinma-stat-box">
+            <small>رصيد الكاش</small>
+            <h3>SAR 192.35</h3>
+        </div>
+
+        <div class="alinma-stat-box">
+            <small>خطوات اليوم</small>
+            <h3>8,432</h3>
+        </div>
+
+        <div class="alinma-stat-box">
+            <small>وقت النشاط</small>
+            <h3>2 ساعة</h3>
+        </div>
+
+    </div>
+
+  <button class="btn-alinma-start" id="startEarnBtn">
+    ابدأ الكسب
+</button>
+
+</div>
+                    <!-- Category Sports Filter Chips -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <div class="sport-selector">
+                            <span class="sport-chip active" data-sport="الكل">الكل</span>
+                            <span class="sport-chip" data-sport="بادل">بادل</span>
+                            <span class="sport-chip" data-sport="تنس">تنس</span>
+                            <span class="sport-chip" data-sport="سكواش">سكواش</span>
+                            <span class="sport-chip" data-sport="كرة قدم">كرة قدم</span>
+                            <span class="sport-chip" data-sport="كرة سلة">كرة سلة</span>
+                        </div>
+                    </div>
+
+                    <!-- Sections: Venues -->
+                    <div class="section-header">
+                        <h2 class="section-title">أبرز الملاعب والأندية</h2>
+                        <a href="#" class="see-all-link">عرض الكل</a>
+                    </div>
+
+                    <!-- Venues Cards Grid -->
+                    <div class="venue-grid" id="venue-grid">
+                        <!-- Dynamic Venue Cards populated by app.js -->
+                    </div>
+                </div>
+
+                <!-- 3. VENUE DETAILS VIEW (تفاصيل المنشأة والمدربين والحجز) -->
+                <div id="venue-details-view" class="hidden">
+                    <!-- Dynamic Venue Details populated by app.js -->
+                </div>
+
+                <!-- 4. BOOKING CONFIRMATION VIEW (شاشة تأكيد الحجز) -->
+                <div id="confirmation-view" class="confirmation-view hidden">
+                    <!-- Dynamic Invoice Invoice generated by app.js -->
+                </div>
+
+                <!-- 5. ACCOUNT & SETTINGS VIEW (شاشة حسابي) -->
+                <div id="account-view" class="account-view hidden">
+                    <!-- Dynamic User Account details populated by app.js -->
+                </div>
+                <div id="earn-view" class="hidden"></div>
+
+                <!-- 6. EXPLORE MAP VIEW (صفحة الاستكشاف بالخريطة) -->
+                <div id="explore-view" class="hidden">
+                    <div class="header-section">
+                        <h1 class="greeting-title">استكشف الأندية القريبة منك 🗺️</h1>
+                        <p class="greeting-subtitle">ابحث عن الأندية والمنشآت الرياضية المحيطة بموقعك الحالي الجغرافي</p>
+                    </div>
+
+                    <!-- الخريطة -->
+                    <div id="map" class="explore-map"></div>
+
+                    <!-- صندوق تفاصيل النادي المحدد من الخريطة (يظهر عند الضغط على ماركر النادي) -->
+                    <div id="map-selected-club-panel" class="map-club-card hidden">
+                        <!-- سيتم تعبئتها ديناميكياً عند الضغط على ماركر النادي -->
+                    </div>
+                </div>
+
+                <!-- 7. MY TEAM VIEW (شاشة فريقي التفاعلية المضافة حديثاً) -->
+                <div id="team-view" class="hidden">
+                    <div class="header-section">
+                        <h1 class="greeting-title">بناء فريقك الرياضي 👥</h1>
+                        <p class="greeting-subtitle">أنشئ فريقك الخاص، ادعُ أصدقاءك، واستعد للتحدي في الملاعب</p>
+                    </div>
+
+                    <div class="creation-container">
+                        <!-- مؤشر الخطوات التفاعلي -->
+                        <div class="stepper" id="stepper">
+                            <div class="step-progress-bar" id="progress-bar"></div>
+                            <div class="step active" id="step-1">
+                                1
+                                <span class="step-label">اسم الفريق</span>
+                            </div>
+                            <div class="step" id="step-2">
+                                2
+                                <span class="step-label">الرياضة المفضلة</span>
+                            </div>
+                            <div class="step" id="step-3">
+                                3
+                                <span class="step-label">الأعضاء</span>
+                            </div>
+                        </div>
+
+                        <!-- فورم خطوات فريقي -->
+                        <form id="teamCreationForm" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; flex-grow: 1;">
+                            
+                            <!-- الخطوة الأولى -->
+                            <div class="step-content active" id="content-1">
+                                <h3 class="section-title">ما هو الاسم المقترح لفريقك؟</h3>
+                                <div style="margin-bottom: 25px;">
+                                    <input type="text" id="teamName" class="team-input" placeholder="مثال: نجوم الملاعب" oninput="validateStep1()">
+                                </div>
+                                <div class="nav-buttons">
+                                    <button type="button" class="btn-action btn-next" id="next-btn-1" onclick="nextStep()" disabled style="opacity: 0.5;">التالي</button>
+                                </div>
+                            </div>
+
+                            <!-- الخطوة الثانية -->
+                            <div class="step-content" id="content-2">
+                                <h3 class="section-title">اختر رياضتك المفضلة للفريق</h3>
+                                <div class="sports-grid">
+                                    <div class="sport-card" onclick="selectSport(this, 'كرة قدم')">
+                                        <span class="sport-icon">⚽</span>
+                                        <span class="sport-name">كرة قدم</span>
+                                    </div>
+                                    <div class="sport-card" onclick="selectSport(this, 'تنس')">
+                                        <span class="sport-icon">🎾</span>
+                                        <span class="sport-name">تنس</span>
+                                    </div>
+                                    <div class="sport-card" onclick="selectSport(this, 'بادل')">
+                                        <span class="sport-icon">🏸</span>
+                                        <span class="sport-name">بادل</span>
+                                    </div>
+                                    <div class="sport-card" onclick="selectSport(this, 'سلة')">
+                                        <span class="sport-icon">🏀</span>
+                                        <span class="sport-name">سلة</span>
+                                    </div>
+                                </div>
+                                <div class="nav-buttons">
+                                    <button type="button" class="btn-action btn-prev" onclick="prevStep()">السابق</button>
+                                    <button type="button" class="btn-action btn-next" id="next-btn-2" onclick="nextStep()" disabled style="opacity: 0.5;">التالي</button>
+                                </div>
+                            </div>
+
+                            <!-- الخطوة الثالثة -->
+                            <div class="step-content" id="content-3">
+                                <h3 class="section-title">دعوة أعضاء الفريق</h3>
+                                <div class="members-list">
+                                    <div class="member-row">
+                                        <div class="member-profile">
+                                            <div class="member-avatar">👩</div>
+                                            <div>
+                                                <div class="member-name">أمل خالد</div>
+                                                <div class="member-status">متصلة الآن</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="invite-btn" onclick="inviteMember(this)">دعوة</button>
+                                    </div>
+                                    <div class="member-row">
+                                        <div class="member-profile">
+                                            <div class="member-avatar">👨</div>
+                                            <div>
+                                                <div class="member-name">عبدالعزيز سليمان</div>
+                                                <div class="member-status">نشط منذ ساعة</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="invite-btn" onclick="inviteMember(this)">دعوة</button>
+                                    </div>
+                                </div>
+                                <div class="nav-buttons">
+                                    <button type="button" class="btn-action btn-prev" onclick="prevStep()">السابق</button>
+                                    <button type="button" class="btn-action btn-next" onclick="finishSetup()">تأكيد وإنشاء</button>
+                                </div>
+                            </div>
+
+                            <!-- خطوة النجاح النهائية -->
+                            <div class="step-content" id="content-4">
+                                <div class="success-box">
+                                    <div class="success-badge">🎉</div>
+                                    <h3 class="section-title" style="margin-bottom: 10px;">تم إنشاء الفريق بنجاح!</h3>
+                                    <p style="color: #64748B; font-weight: 600;">فريقك «<span id="finalTeamName" style="color: var(--primary);">نجوم الملاعب</span>» جاهز لبدء التحدي.</p>
+                                </div>
+                                <div class="nav-buttons">
+                                    <button type="button" class="btn-action btn-prev" style="flex-grow: 1;" onclick="resetForm()">العودة للرئيسية</button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- MOBILE BOTTOM TAB BAR NAVIGATION -->
+            <nav class="mobile-nav">
+                <button class="mobile-nav-btn active" data-view="home">
+                    <i class="fas fa-home"></i>
+                    <span>الرئيسية</span>
+                </button>
+                <button class="mobile-nav-btn" data-view="explore">
+                    <i class="fas fa-compass"></i>
+                    <span>استكشاف</span>
+                </button>
+                <button class="mobile-nav-btn" data-view="team">
+                    <i class="fas fa-users"></i>
+                    <span>فريقي</span>
+                </button>
+                <button class="mobile-nav-btn" data-view="search">
+                    <i class="fas fa-search"></i>
+                    <span>بحث</span>
+                </button>
+                <button class="mobile-nav-btn" data-view="account">
+                    <i class="fas fa-user"></i>
+                    <span>حسابي</span>
+                </button>
+            </nav>
+
+        </div>
+
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script src="app.js"></script>
+    <script>
+        // دالة التنقل العام بين الصفحات
+        function navigateToView(viewName) {
+            // إخفاء كافة الشاشات
+            const views = ['home-view', 'venue-details-view', 'confirmation-view', 'account-view', 'explore-view', 'team-view'];
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                if (el) el.classList.add('hidden');
+            });
+
+            // إظهار الشاشة المحددة
+            const targetEl = document.getElementById(`${viewName}-view`);
+            if (targetEl) {
+                targetEl.classList.remove('hidden');
+            }
+
+            // تحديث التحديد على أزرار التصفح بالـ Sidebar والـ Mobile Nav
+            document.querySelectorAll('.nav-item-btn, .mobile-nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-view') === viewName) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // في حال تم اختيار الخريطة، نقوم بإعادة تهيئتها لتعمل بشكل سليم
+            if (viewName === 'explore' && typeof map !== 'undefined') {
+                setTimeout(() => { map.invalidateSize(); }, 200);
+            }
+        }
+
+        // تحسين أزرار شريط التنقل السفلي للهواتف
+        document.querySelectorAll('.mobile-nav-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const view = btn.getAttribute('data-view');
+                if (view === 'team') {
+                    navigateToView('team');
+                } else if (view === 'explore') {
+                    navigateToView('explore');
+                } else if (view === 'search') {
+                    navigateToView('home');
+                    setTimeout(() => {
+                        const input = document.getElementById('global-search');
+                        if (input) {
+                            input.focus();
+                            input.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }, 100);
+                } else {
+                    navigateToView(view);
+                }
+            });
+        });
+
+        // تحسين أزرار شريط التنقل الجانبي للديسك توب
+        document.querySelectorAll('.nav-item-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const view = btn.getAttribute('data-view');
+                if (view === 'team') {
+                    navigateToView('team');
+                } else if (view === 'explore') {
+                    navigateToView('explore');
+                } else if (view === 'search') {
+                    navigateToView('home');
+                    setTimeout(() => {
+                        const input = document.getElementById('global-search');
+                        if (input) input.focus();
+                    }, 100);
+                } else {
+                    navigateToView(view);
+                }
+            });
+        });
+
+        // النقر على الأفاتار للذهاب لصفحة حسابي
+        const avatarBtn = document.getElementById('avatar-to-account');
+        if (avatarBtn) {
+            avatarBtn.addEventListener('click', () => {
+                navigateToView('account');
+            });
+        }
+
+        // ==================== سكريبت خطوات شاشة فريقي التفاعلية ====================
+        let step = 1;
+        let selectedSportName = "";
+
+        function updateUI() {
+            document.querySelectorAll('.step-content').forEach((el, idx) => {
+                if(idx + 1 === step) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            if (step <= 3) {
+                document.getElementById('stepper').style.display = 'flex';
+                for (let i = 1; i <= 3; i++) {
+                    const stepCircle = document.getElementById(`step-${i}`);
+                    if (i < step) {
+                        stepCircle.className = "step completed";
+                        stepCircle.innerHTML = `✓ <span class="step-label">${getLabel(i)}</span>`;
+                    } else if (i === step) {
+                        stepCircle.className = "step active";
+                        stepCircle.innerHTML = `${i} <span class="step-label">${getLabel(i)}</span>`;
+                    } else {
+                        stepCircle.className = "step";
+                        stepCircle.innerHTML = `${i} <span class="step-label">${getLabel(i)}</span>`;
+                    }
+                }
+                const progressPercentage = ((step - 1) / 2) * 100;
+                document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+            } else {
+                document.getElementById('stepper').style.display = 'none';
+            }
+        }
+
+        function getLabel(idx) {
+            if(idx === 1) return "اسم الفريق";
+            if(idx === 2) return "الرياضة المفضلة";
+            if(idx === 3) return "الأعضاء";
+            return "";
+        }
+
+        function nextStep() {
+            if (step < 4) { step++; updateUI(); }
+        }
+
+        function prevStep() {
+            if (step > 1) { step--; updateUI(); }
+        }
+
+        function validateStep1() {
+            const val = document.getElementById('teamName').value.trim();
+            const btn = document.getElementById('next-btn-1');
+            if(val.length > 0) {
+                btn.removeAttribute('disabled');
+                btn.style.opacity = '1';
+            } else {
+                btn.setAttribute('disabled', 'true');
+                btn.style.opacity = '0.5';
+            }
+        }
+
+        function selectSport(element, name) {
+            document.querySelectorAll('.sport-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedSportName = name;
+            const btn = document.getElementById('next-btn-2');
+            btn.removeAttribute('disabled');
+            btn.style.opacity = '1';
+        }
+
+        function inviteMember(btn) {
+            if(btn.classList.contains('invited')) {
+                btn.classList.remove('invited');
+                btn.textContent = "دعوة";
+            } else {
+                btn.classList.add('invited');
+                btn.textContent = "تمت الدعوة ✓";
+            }
+        }
+
+        function finishSetup() {
+            const name = document.getElementById('teamName').value || "نجوم الملاعب";
+            document.getElementById('finalTeamName').textContent = name;
+            step = 4;
+            updateUI();
+        }
+
+        function resetForm() {
+            document.getElementById('teamCreationForm').reset();
+            document.querySelectorAll('.sport-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.invite-btn').forEach(b => {
+                b.classList.remove('invited');
+                b.textContent = "دعوة";
+            });
+            step = 1;
+            validateStep1();
+            updateUI();
+            navigateToView('home');
+        }
+    </script>
+</body>
+</html>
